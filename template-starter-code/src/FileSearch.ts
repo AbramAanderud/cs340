@@ -1,12 +1,8 @@
 import * as fs from "fs";
-import * as path from "path";
+import { Template } from "./Template";
 
-class FileSearch {
-  private dirName: string;
-  private fileRegExp: RegExp;
+class FileSearch extends Template {
   private searchRegExp: RegExp;
-  private recurse: boolean;
-
   private totalMatches: number = 0;
 
   public static main(): void {
@@ -45,119 +41,40 @@ class FileSearch {
     searchPattern: string,
     recurse: boolean = false
   ) {
-    this.dirName = dirName;
-    this.fileRegExp = new RegExp(filePattern);
+    super(dirName, filePattern, recurse);
     this.searchRegExp = new RegExp(searchPattern);
-    this.recurse = recurse;
   }
 
-  private async run() {
-    await this.searchDirectory(this.dirName);
-    console.log();
-    console.log(`TOTAL MATCHES: ${this.totalMatches}`);
-  }
-
-  private async searchDirectory(filePath: string) {
-    if (!this.isDirectory(filePath)) {
-      this.nonDirectory(filePath);
-      return;
-    }
-
-    if (!this.isReadable(filePath)) {
-      this.unreadableDirectory(filePath);
-      return;
-    }
-
-    const files = fs.readdirSync(filePath);
-
-    for (let file of files) {
-      const fullPath = path.join(filePath, file);
-      if (this.isFile(fullPath)) {
-        if (this.isReadable(fullPath)) {
-          await this.searchFile(fullPath);
-        } else {
-          this.unreadableFile(fullPath);
-        }
-      }
-    }
-
-    if (this.recurse) {
-      for (let file of files) {
-        const fullPath = path.join(filePath, file);
-        if (this.isDirectory(fullPath)) {
-          await this.searchDirectory(fullPath);
-        }
-      }
-    }
-  }
-
-  private async searchFile(filePath: string) {
+  protected async handleFile(filePath: string): Promise<void> {
     let currentMatchCount = 0;
 
-    if (this.fileRegExp.test(filePath)) {
-      try {
-        const fileContent: string = await fs.promises.readFile(
-          filePath,
-          "utf-8"
-        );
-        const lines: string[] = fileContent.split(/\r?\n/);
+    const fileContent: string = await fs.promises.readFile(filePath, "utf-8");
+    const lines: string[] = fileContent.split(/\r?\n/);
 
-        lines.forEach((line) => {
-          if (this.searchRegExp.test(line)) {
-            if (++currentMatchCount == 1) {
-              console.log();
-              console.log(`FILE: ${filePath}`);
-            }
-
-            console.log(line);
-            this.totalMatches++;
-          }
-        });
-      } catch (error) {
-        this.unreadableFile(filePath);
-      } finally {
-        if (currentMatchCount > 0) {
-          console.log(`MATCHES: ${currentMatchCount}`);
+    lines.forEach((line) => {
+      if (this.searchRegExp.test(line)) {
+        if (++currentMatchCount == 1) {
+          console.log();
+          console.log(`FILE: ${filePath}`);
         }
+
+        console.log(line);
+        this.totalMatches++;
       }
+    });
+
+    if (currentMatchCount > 0) {
+      console.log(`MATCHES: ${currentMatchCount}`);
     }
   }
 
-  private isDirectory(path: string): boolean {
-    try {
-      return fs.statSync(path).isDirectory();
-    } catch (error) {
-      return false;
-    }
+  protected handleFileError(filePath: string, _error: any): void {
+    this.handleUnreadableFile(filePath);
   }
 
-  private isFile(path: string): boolean {
-    try {
-      return fs.statSync(path).isFile();
-    } catch (error) {
-      return false;
-    }
-  }
-
-  private isReadable(path: string): boolean {
-    try {
-      fs.accessSync(path, fs.constants.R_OK);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  private nonDirectory(dirName: string): void {
-    console.log(`${dirName} is not a directory`);
-  }
-
-  private unreadableDirectory(dirName: string): void {
-    console.log(`Directory ${dirName} is unreadable`);
-  }
-
-  private unreadableFile(fileName: string): void {
-    console.log(`File ${fileName} is unreadable`);
+  protected printFinalSummary(): void {
+    console.log();
+    console.log(`TOTAL MATCHES: ${this.totalMatches}`);
   }
 }
 
