@@ -7,10 +7,8 @@ import AuthenticationFormLayout from "../AuthenticationFormLayout";
 import AuthenticationFields from "../AuthenticationFields";
 import { useMessageActions } from "../../toaster/MessageHooks";
 import { useUserInfoActions } from "../../userInfo/UserInfoHooks";
-import {
-  RegisterPresenter,
-  RegisterView,
-} from "../../../presenter/RegisterPresenter";
+import { RegisterPresenter } from "../../../presenter/RegisterPresenter";
+import { AuthView } from "../../../presenter/AuthenticatePresenter";
 
 const Register = () => {
   const [firstName, setFirstName] = useState("");
@@ -27,7 +25,7 @@ const Register = () => {
   const { updateUserInfo } = useUserInfoActions();
   const { displayErrorMessage } = useMessageActions();
 
-  const listener: RegisterView = {
+  const listener: AuthView = {
     setIsLoading,
     displayErrorMessage,
     updateUserInfo,

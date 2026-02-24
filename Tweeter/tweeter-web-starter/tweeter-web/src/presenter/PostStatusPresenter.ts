@@ -1,20 +1,17 @@
 import { AuthToken, Status, User } from "tweeter-shared";
 import { StatusService } from "../model.service/StatusService";
+import { MessageView, Presenter } from "./Presenter";
 
-export interface PostStatusView {
+export interface PostStatusView extends MessageView {
   setIsLoading: (value: boolean) => void;
   clearPost: () => void;
-
-  displayErrorMessage: (message: string) => void;
-  displayInfoMessage: (message: string, duration: number) => string;
-  deleteMessage: (id: string) => void;
 }
 
-export class PostStatusPresenter {
-  private statusService: StatusService;
+export class PostStatusPresenter extends Presenter<PostStatusView> {
+  private statusService = new StatusService();
 
-  public constructor(private view: PostStatusView) {
-    this.statusService = new StatusService();
+  public constructor(view: PostStatusView) {
+    super(view);
   }
 
   public checkButtonStatus(
@@ -32,19 +29,18 @@ export class PostStatusPresenter {
   ): Promise<void> {
     let toastId = "";
 
+    this.view.setIsLoading(true);
+
     try {
-      this.view.setIsLoading(true);
       toastId = this.view.displayInfoMessage("Posting status...", 0);
 
-      const status = new Status(post, currentUser, Date.now());
-      await this.statusService.postStatus(authToken, status);
+      await this.doFailureReportingOperation(async () => {
+        const status = new Status(post, currentUser, Date.now());
+        await this.statusService.postStatus(authToken, status);
 
-      this.view.clearPost();
-      this.view.displayInfoMessage("Status posted!", 2000);
-    } catch (error) {
-      this.view.displayErrorMessage(
-        `Failed to post the status because of exception: ${error}`,
-      );
+        this.view.clearPost();
+        this.view.displayInfoMessage("Status posted!", 2000);
+      }, "post the status");
     } finally {
       if (toastId) this.view.deleteMessage(toastId);
       this.view.setIsLoading(false);

@@ -1,25 +1,11 @@
-import { AuthToken, User } from "tweeter-shared";
 import { AuthService } from "../model.service/AuthService";
+import { AuthenticatePresenter, AuthView } from "./AuthenticatePresenter";
 
-export interface LoginView {
-  setIsLoading: (value: boolean) => void;
-  displayErrorMessage: (message: string) => void;
+export class LoginPresenter extends AuthenticatePresenter {
+  private authService = new AuthService();
 
-  updateUserInfo: (
-    currentUser: User,
-    displayedUser: User,
-    authToken: AuthToken,
-    rememberMe: boolean,
-  ) => void;
-
-  navigate: (path: string) => void;
-}
-
-export class LoginPresenter {
-  private authService: AuthService;
-
-  public constructor(private view: LoginView) {
-    this.authService = new AuthService();
+  public constructor(view: AuthView) {
+    super(view);
   }
 
   public checkSubmitButtonStatus(alias: string, password: string): boolean {
@@ -32,24 +18,11 @@ export class LoginPresenter {
     rememberMe: boolean,
     originalUrl?: string,
   ): Promise<void> {
-    try {
-      this.view.setIsLoading(true);
-
-      const [user, authToken] = await this.authService.login(alias, password);
-
-      this.view.updateUserInfo(user, user, authToken, rememberMe);
-
-      if (!!originalUrl) {
-        this.view.navigate(originalUrl);
-      } else {
-        this.view.navigate(`/feed/${user.alias}`);
-      }
-    } catch (error) {
-      this.view.displayErrorMessage(
-        `Failed to log user in because of exception: ${error}`,
-      );
-    } finally {
-      this.view.setIsLoading(false);
-    }
+    await this.authenticate(
+      "log user in",
+      rememberMe,
+      () => this.authService.login(alias, password),
+      (user) => originalUrl ?? `/feed/${user.alias}`,
+    );
   }
 }

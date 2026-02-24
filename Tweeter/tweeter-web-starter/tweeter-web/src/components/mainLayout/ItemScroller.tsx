@@ -1,66 +1,64 @@
 import { useEffect, useRef, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { Status } from "tweeter-shared";
 import { useParams } from "react-router-dom";
-import StatusItem from "../statusItem/StatusItem";
 import { useMessageActions } from "../toaster/MessageHooks";
 import { useUserInfo, useUserInfoActions } from "../userInfo/UserInfoHooks";
 import {
-  StatusItemPresenter,
-  StatusItemView,
-} from "../../presenter/StatusItemPresenter";
+  PagedItemPresenter,
+  PagedItemView,
+} from "../../presenter/PagedItemPresenter";
 
-interface Props {
+interface Props<T, P extends PagedItemPresenter<T, any>> {
   featureUrl: string;
-  presenterFactory: (view: StatusItemView) => StatusItemPresenter;
+  presenterFactory: (view: PagedItemView<T>) => P;
+  itemComponentGenerator: (item: T) => JSX.Element;
+  containerItemWrapper?: (element: JSX.Element, index: number) => JSX.Element;
 }
 
-const StatusItemScroller = (props: Props) => {
+const ItemScroller = <T, P extends PagedItemPresenter<T, any>>(
+  props: Props<T, P>,
+) => {
   const { displayErrorMessage } = useMessageActions();
-  const [items, setItems] = useState<Status[]>([]);
+  const [items, setItems] = useState<T[]>([]);
 
   const { displayedUser, authToken } = useUserInfo();
   const { setDisplayedUser } = useUserInfoActions();
   const { displayedUser: displayedUserAliasParam } = useParams();
 
-  const listener: StatusItemView = {
-    addItems: (newItems: Status[]) =>
+  const listener: PagedItemView<T> = {
+    addItems: (newItems: T[]) =>
       setItems((previousItems) => [...previousItems, ...newItems]),
-    displayErrorMessage: displayErrorMessage,
+    displayErrorMessage,
   };
 
-  const presenterRef = useRef<StatusItemPresenter | null>(null);
+  const presenterRef = useRef<P | null>(null);
   if (!presenterRef.current) {
     presenterRef.current = props.presenterFactory(listener);
   }
+
   useEffect(() => {
     if (
       authToken &&
       displayedUserAliasParam &&
-      displayedUserAliasParam !== displayedUser!.alias
+      displayedUser &&
+      displayedUserAliasParam !== displayedUser.alias
     ) {
       presenterRef
         .current!.getUser(authToken, displayedUserAliasParam)
         .then((toUser) => {
-          if (toUser) {
-            setDisplayedUser(toUser);
-          }
+          if (toUser) setDisplayedUser(toUser);
         });
     }
   }, [displayedUserAliasParam]);
 
   useEffect(() => {
-    reset();
-    loadMoreItems();
-  }, [displayedUser]);
-
-  const reset = () => {
     setItems(() => []);
     presenterRef.current!.reset();
-  };
+    presenterRef.current!.loadMoreItems(authToken!, displayedUser!.alias);
+  }, [displayedUser]);
 
   const loadMoreItems = () => {
-    presenterRef.current!.loadMoreItems(authToken!, displayedUser!);
+    presenterRef.current!.loadMoreItems(authToken!, displayedUser!.alias);
   };
 
   return (
@@ -72,16 +70,15 @@ const StatusItemScroller = (props: Props) => {
         hasMore={presenterRef.current!.hasMoreItems}
         loader={<h4>Loading...</h4>}
       >
-        {items.map((item, index) => (
-          <StatusItem
-            key={index}
-            status={item}
-            featurePath={props.featureUrl}
-          />
-        ))}
+        {items.map((item, index) => {
+          const element = props.itemComponentGenerator(item);
+          return props.containerItemWrapper
+            ? props.containerItemWrapper(element, index)
+            : element;
+        })}
       </InfiniteScroll>
     </div>
   );
 };
 
-export default StatusItemScroller;
+export default ItemScroller;
