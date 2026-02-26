@@ -9,8 +9,8 @@ describe("PostStatusPresenter", () => {
   let mockService: StatusService;
 
   const authToken = new AuthToken("abc123", Date.now());
-  const currentUser = new User("Abe", "A", "@a", "url");
-  const post = "status";
+  const currentUser = new User("firstName", "lastName", "@alias", "url");
+  const post = "SomeStatus";
 
   beforeEach(() => {
     mockView = mock<PostStatusView>();

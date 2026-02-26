@@ -12,7 +12,7 @@ export class LoginPresenter extends AuthenticatePresenter {
     return !alias || !password;
   }
 
-  public async doLogin(
+  public async login(
     alias: string,
     password: string,
     rememberMe: boolean,
