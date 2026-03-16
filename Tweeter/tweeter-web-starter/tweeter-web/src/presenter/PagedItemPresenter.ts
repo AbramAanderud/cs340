@@ -9,10 +9,7 @@ export interface PagedItemView<T> extends View {
   addItems: (newItems: T[]) => void;
 }
 
-export abstract class PagedItemPresenter<
-  T,
-  U extends Service,
-> extends Presenter<PagedItemView<T>> {
+export abstract class PagedItemPresenter<T, U extends Service> extends Presenter<PagedItemView<T>> {
   private readonly userService: UserService = new UserService();
 
   private _hasMoreItems = true;
@@ -52,17 +49,11 @@ export abstract class PagedItemPresenter<
     this._hasMoreItems = true;
   }
 
-  public async getUser(
-    authToken: AuthToken,
-    alias: string,
-  ): Promise<User | null> {
+  public async getUser(authToken: AuthToken, alias: string): Promise<User | null> {
     return this.userService.getUser(authToken, alias);
   }
 
-  public async loadMoreItems(
-    authToken: AuthToken,
-    userAlias: string,
-  ): Promise<void> {
+  public async loadMoreItems(authToken: AuthToken, userAlias: string): Promise<void> {
     await this.doFailureReportingOperation(async () => {
       const [newItems, hasMore] = await this.getMoreItems(authToken, userAlias);
 
@@ -78,8 +69,5 @@ export abstract class PagedItemPresenter<
 
   protected abstract itemDescription(): string;
 
-  protected abstract getMoreItems(
-    authToken: AuthToken,
-    userAlias: string,
-  ): Promise<[T[], boolean]>;
+  protected abstract getMoreItems(authToken: AuthToken, userAlias: string): Promise<[T[], boolean]>;
 }

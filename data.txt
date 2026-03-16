@@ -1,0 +1,7 @@
+{
+"to": "abramash@byu.edu",
+"from": "abramash@byu.edu",
+"subject": "Test Message from curl",
+"textBody": "This is a test from curl lets hope this works lfg ...",
+"htmlBody": "This is a test..."
+}
