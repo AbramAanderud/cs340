@@ -1,3 +1,4 @@
+import { StatusDto } from "../..";
 import { PostSegment, Type } from "./PostSegment";
 import { User } from "./User";
 import { format } from "date-fns";
@@ -27,8 +28,8 @@ export class Status {
             post.substring(startIndex, reference.startPostion),
             startIndex,
             reference.startPostion - 1,
-            Type.text
-          )
+            Type.text,
+          ),
         );
       }
 
@@ -39,12 +40,7 @@ export class Status {
 
     if (startIndex < post.length) {
       segments.push(
-        new PostSegment(
-          post.substring(startIndex),
-          startIndex,
-          post.length,
-          Type.text
-        )
+        new PostSegment(post.substring(startIndex), startIndex, post.length, Type.text),
       );
     }
 
@@ -77,9 +73,7 @@ export class Status {
 
       if (startIndex > -1) {
         // Push the url
-        references.push(
-          new PostSegment(url, startIndex, startIndex + url.length, Type.url)
-        );
+        references.push(new PostSegment(url, startIndex, startIndex + url.length, Type.url));
 
         // Move start and previous start past the url
         startIndex = startIndex + url.length;
@@ -150,12 +144,7 @@ export class Status {
       if (startIndex > -1) {
         // Push the alias
         references.push(
-          new PostSegment(
-            mention,
-            startIndex,
-            startIndex + mention.length,
-            Type.alias
-          )
+          new PostSegment(mention, startIndex, startIndex + mention.length, Type.alias),
         );
 
         // Move start and previous start past the mention
@@ -190,9 +179,7 @@ export class Status {
     let match;
     while ((match = regex.exec(post)) !== null) {
       const matchIndex = match.index;
-      newlines.push(
-        new PostSegment("\n", matchIndex, matchIndex + 1, Type.newline)
-      );
+      newlines.push(new PostSegment("\n", matchIndex, matchIndex + 1, Type.newline));
     }
 
     return newlines;
@@ -262,13 +249,29 @@ export class Status {
           jsonObject._user._firstName,
           jsonObject._user._lastName,
           jsonObject._user._alias,
-          jsonObject._user._imageUrl
+          jsonObject._user._imageUrl,
         ),
-        jsonObject._timestamp
+        jsonObject._timestamp,
       );
     } else {
       return null;
     }
+  }
+
+  public get dto(): StatusDto {
+    return {
+      post: this.post,
+      user: this.user.dto,
+      timestamp: this.timestamp,
+    };
+  }
+
+  public static fromDto(dto: StatusDto | null): Status | null {
+    if (dto == null) {
+      return null;
+    }
+
+    return new Status(dto.post, User.fromDto(dto.user)!, dto.timestamp);
   }
 
   public toJson(): string {

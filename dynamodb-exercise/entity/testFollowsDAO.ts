@@ -1,4 +1,4 @@
-import { FollowsDAO } from "./FollowsDAO";
+import { FollowsDAO } from "../dao/FollowsDAO";
 
 async function main() {
   console.log("Starting test...");

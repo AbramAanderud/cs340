@@ -1,14 +1,31 @@
-import { AuthToken, FakeData, Status, User } from "tweeter-shared";
+import {
+  AuthToken,
+  PagedStatusItemRequest,
+  PostStatusRequest,
+  Status,
+  StatusDto,
+  User,
+} from "tweeter-shared";
+import { ServerFacade } from "../network/ServerFacade";
 import { Service } from "./Service";
 
 export class StatusService implements Service {
+  private serverFacade = new ServerFacade();
+
   public async loadMoreFeedItems(
     authToken: AuthToken,
     user: User,
     pageSize: number,
     lastItem: Status | null,
   ): Promise<[Status[], boolean]> {
-    return FakeData.instance.getPageOfStatuses(lastItem, pageSize);
+    const request: PagedStatusItemRequest = {
+      token: authToken.token,
+      userAlias: user.alias,
+      pageSize,
+      lastItem: lastItem ? lastItem.dto : null,
+    };
+
+    return this.serverFacade.getMoreFeedItems(request);
   }
 
   public async loadMoreStoryItems(
@@ -17,16 +34,22 @@ export class StatusService implements Service {
     pageSize: number,
     lastItem: Status | null,
   ): Promise<[Status[], boolean]> {
-    return FakeData.instance.getPageOfStatuses(lastItem, pageSize);
+    const request: PagedStatusItemRequest = {
+      token: authToken.token,
+      userAlias: user.alias,
+      pageSize,
+      lastItem: lastItem ? lastItem.dto : null,
+    };
+
+    return this.serverFacade.getMoreStoryItems(request);
   }
 
-  public async postStatus(
-    authToken: AuthToken,
-    newStatus: Status,
-  ): Promise<void> {
-    // Pause so we can see the posting message. Remove when connected to the server
-    await new Promise((f) => setTimeout(f, 2000));
+  public async postStatus(authToken: AuthToken, newStatus: Status): Promise<void> {
+    const request: PostStatusRequest = {
+      token: authToken.token,
+      newStatus: newStatus.dto,
+    };
 
-    // TODO: Call the server to post the status
+    await this.serverFacade.postStatus(request);
   }
 }
